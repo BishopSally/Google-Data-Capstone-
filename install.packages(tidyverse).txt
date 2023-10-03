@@ -1,0 +1,85 @@
+install.packages("tidyverse")
+library(tidyverse)
+install.packages("ggplot2")
+library(ggplot2)
+install.packages("janitor")
+library(janitor)
+install.packages("lubridate")
+library(lubridate)
+library(dplyr)
+library(readr)
+
+daily_activity <- read_csv("Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv")
+View(daily_activity)
+
+daily_calories <- read_csv("Fitabase Data 4.12.16-5.12.16/dailyCalories_merged.csv")
+View(daily_calories)
+
+daily_intensities <- read_csv("Fitabase Data 4.12.16-5.12.16/dailyIntensities_merged.csv")
+View(daily_intensities)
+
+daily_steps <- read_csv("Fitabase Data 4.12.16-5.12.16/dailySteps_merged.csv")
+View(daily_steps)
+
+sleep_day <- read_csv("Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+View(sleep_day)
+
+weight_info <- read_csv("Fitabase Data 4.12.16-5.12.16/weightLogInfo_merged.csv")
+View(weight_info)
+
+is.null(daily_activity)
+is.null(daily_calories)
+is.null(daily_intensities)
+is.null(daily_steps)
+is.null (sleep_day)
+
+head(daily_activity)
+str(daily_activity)
+n_distinct(sleep_day$Id)
+n_distinct(daily_activity$Id)
+
+daily_activity$ActivityDate <- as.Date(daily_activity$ActivityDate, "%m/%d/%y")
+daily_calories$ActivityDay <- as.Date(daily_calories$ActivityDay, "%m/%d/%y")
+daily_intensities$ActivityDay <- as.Date(daily_intensities$ActivityDay, "%m/%d/%y")
+daily_steps$ActivityDay <- as.Date(daily_steps$ActivityDay, "%m/%d/%y")
+sleep_day$SleepDay <- as.Date(strptime(sleep_day$SleepDay, "%m/%d/%Y"))
+
+str(daily_activity)
+str(daily_calories)
+str(daily_steps)
+str(sleep_day)
+str(daily_intensities)
+
+daily_activity = subset(daily_activity,select = -c(LoggedActivitiesDistance, VeryActiveDistance, ModeratelyActiveDistance, LightActiveDistance, SedentaryActiveDistance))
+daily_intensities = subset(daily_intensities,select = -c(SedentaryActiveDistance, LightActiveDistance, ModeratelyActiveDistance, VeryActiveDistance))
+
+str(daily_activity)
+str(daily_intensities)
+
+daily_activity %>%
+  select(TotalSteps,
+         TotalDistance, TrackerDistance, VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes, SedentaryMinutes, Calories) %>%
+  summary()
+
+sleep_day %>%
+  select(TotalSleepRecords, TotalMinutesAsleep, TotalTimeInBed) %>%
+  summary() 
+
+merged_data <- merge(sleep_day, daily_activity, by= c('Id'))
+head(merged_data)
+
+ggplot(data = daily_activity)+
+  geom_point(mapping = aes(x = TotalSteps, y = Calories, color = Calories))+
+  geom_smooth(mapping = aes(x = TotalSteps, y = Calories))+ 
+  ggtitle("Calories vs. Total Steps")+
+  labs(title = "Calories vs. Total Steps",
+       x = "Total Steps", y = "Calories")
+
+ggplot(data = daily_activity)+
+  geom_point(mapping = aes(x = TotalDistance, y = Calories, color = Calories))+
+  geom_smooth(mapping = aes(x = TotalDistance, y = Calories))+
+  ggtitle("Calories vs. Total Distance")+
+  labs(title = "Calories vs. Total Distance",
+       x = "Total Distance", y = "Calories")
+
+ggplot()

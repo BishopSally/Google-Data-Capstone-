@@ -1,0 +1,162 @@
+install.packages("tidyverse")
+install.packages("ggplot2")
+install.packages("janitor")
+
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+library(lubridate)
+library(dplyr)
+library(readr)
+
+daily_activity <- read_csv("Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv")
+View(daily_activity)
+
+daily_calories <- read_csv("Fitabase Data 4.12.16-5.12.16/dailyCalories_merged.csv")
+View(daily_calories)
+
+daily_intensities <- read_csv("Fitabase Data 4.12.16-5.12.16/dailyIntensities_merged.csv")
+View(daily_intensities)
+
+daily_steps <- read_csv("Fitabase Data 4.12.16-5.12.16/dailySteps_merged.csv")
+View(daily_steps)
+
+sleep_day <- read_csv("Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+View(sleep_day)
+
+weight_info <- read_csv("Fitabase Data 4.12.16-5.12.16/weightLogInfo_merged.csv")
+View(weight_info)
+
+hourly_steps <- read_csv("Fitabase Data 4.12.16-5.12.16/hourlySteps_merged.csv")
+View(hourly_steps)
+
+hourly_Calories <- read_csv("Fitabase Data 4.12.16-5.12.16/hourlyCalories_merged.csv")
+View(hourly_Calories)
+
+daily_activity = subset(daily_activity,select = -c(LoggedActivitiesDistance, VeryActiveDistance, ModeratelyActiveDistance, LightActiveDistance, SedentaryActiveDistance))
+daily_intensities = subset(daily_intensities,select = -c(SedentaryActiveDistance, LightActiveDistance, ModeratelyActiveDistance, VeryActiveDistance))
+
+str(daily_activity)
+str(daily_intensities)
+
+is.null(daily_activity)
+is.null(daily_calories)
+is.null(daily_intensities)
+is.null(daily_steps)
+is.null(sleep_day)
+is.null(weight_info)
+is.null(hourly_Calories)
+is.null(hourly_steps)
+
+head(daily_activity)
+str(daily_activity)
+n_distinct(sleep_day$Id)
+n_distinct(daily_activity$Id)
+
+is_empty(daily_activity)
+is_empty(daily_calories)
+is_empty(daily_intensities)
+is_empty(daily_steps)
+is_empty(sleep_day)
+is_empty(weight_info)
+is_empty(hourly_Calories)
+is_empty(hourly_steps)
+
+daily_activity$ActivityDate <- as.Date(daily_activity$ActivityDate, "%m/%d/%y")
+daily_calories$ActivityDay <- as.Date(daily_calories$ActivityDay, "%m/%d/%y")
+daily_intensities$ActivityDay <- as.Date(daily_intensities$ActivityDay, "%m/%d/%y")
+daily_steps$ActivityDay <- as.Date(daily_steps$ActivityDay, "%m/%d/%y")
+sleep_day$SleepDay <- as.Date(strptime(sleep_day$SleepDay, "%m/%d/%Y"))
+hourly_Calories$ActivityHour <- as.Date(hourly_Calories$ActivityHour, "%m/%d/%y")
+hourly_steps$ActivityHour <- as.Date(hourly_steps$ActivityHour, "%m/%d/%y")
+weight_info$Date <- as.Date(weight_info$Date, "%m/%d/%y")
+
+str(daily_activity)
+str(daily_calories)
+str(daily_steps)
+str(sleep_day)
+str(daily_intensities)
+str(hourly_Calories)
+str(hourly_steps)
+str(weight_info)
+
+daily_activity %>%
+  select(TotalSteps,
+         TotalDistance, TrackerDistance, VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes, SedentaryMinutes, Calories) %>%
+  summary()
+
+sleep_day %>%
+  select(TotalSleepRecords, TotalMinutesAsleep, TotalTimeInBed) %>%
+  summary() 
+
+ggplot(data = daily_activity)+
+  geom_point(mapping = aes(x = TotalSteps, y = Calories, color = Calories))+
+  geom_smooth(mapping = aes(x = TotalSteps, y = Calories))+ 
+  ggtitle("Calories vs. Total Steps")+
+  labs(title = "Calories vs. Total Steps",
+       x = "Total Steps", y = "Calories")
+
+ggplot(data = daily_activity)+
+  geom_point(mapping = aes(x = TotalDistance, y = Calories, color = Calories))+
+  geom_smooth(mapping = aes(x = TotalDistance, y = Calories))+
+  ggtitle("Calories vs. Total Distance")+
+  labs(title = "Calories vs. Total Distance",
+       x = "Total Distance", y = "Calories")
+
+combined_bars <- merge(sleep_day, hourly_steps, by = c('Id'))
+view(combined_bars)
+
+ggplot(data = combined_bars) +
+  geom_bar(mapping = aes(x = TotalMinutesAsleep), stat = "count", color = "steelblue", fill = "white") +
+  labs(x = "Time in Bed", y = "Steps", title = "Rest vs. Steps") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18, face = "bold"),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        panel.grid.major = element_line(color = "gray80"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "white"))
+
+record_activity <- merge(daily_activity, daily_steps, by = c('Id'))
+view(record_activity)
+
+ggplot(record_activity, aes(x = ActivityDate, y = StepTotal)) +
+  geom_smooth() +
+  labs(x = "Days Recorded", y = "Steps Taken", title = "Days Recorded vs. Steps Taken")
+
+
+total_intensities <- daily_intensities %>%
+  mutate(daily_intensities = rowSums(select(., SedentaryMinutes, LightlyActiveMinutes, FairlyActiveMinutes, VeryActiveMinutes), na.rm = TRUE))
+
+total_intensities$Calories <- daily_calories$Calories
+
+names(total_intensities)[names(total_intensities) == "daily_intensities"] <- "TotalMinutes"
+
+ggplot(total_intensities, aes(x = TotalMinutes, y = Calories))+
+  geom_smooth()+
+  labs(x = "Total Minutes", y = "Calories Burned", title = "Intensity vs Calories Burned")
+
+ggplot(data = hourly_Calories, aes(x = ActivityHour, y = Calories))+
+  geom_line(size = 1.5)+
+  labs(title = "Hourly Calories Burned by Day")
+
+ggplot(data = hourly_steps, aes(x = ActivityHour, y = StepTotal))+
+  geom_line(size = 1.5)+
+  labs(title = "Hourly Steps by Day")
+
+ggplot(data = weight_info, aes(x = Id, y = WeightPounds))+
+  geom_line(size=1.5)+
+  labs(title = "Participant Weight")
+glimpse(weight_info$WeightPounds)
+glimpse(weight_info$Id)
+
+
+weight_summary <- weight_info %>%
+  group_by(Date) %>%
+  summarise(AverageWeight = mean(WeightPounds))
+glimpse(weight_summary$AverageWeight)
+
+ggplot(data = weight_summary, aes(x = Date, y = AverageWeight)) +
+  geom_col(fill = "blue") +
+  labs(title = "Average Weight by Day") +
+  scale_x_date(date_labels = "%b %d, %Y", date_breaks = "1 week")
